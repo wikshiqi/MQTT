@@ -3,26 +3,35 @@
 
 #include <QMainWindow>
 #include <QTabWidget>
-#include "mqttmodule.h"
-#include "serialmodule.h"
+#include <QTextEdit>
+
+class MqttUI;
+class SerialUI;
+class MqttModule;
+class SerialModule;
 
 class MainWindow : public QMainWindow
 {
 Q_OBJECT
+
 public:
     explicit MainWindow(QWidget *parent = nullptr);
+    // 修复：移除 = default，仅声明析构函数（让编译器自动生成默认实现）
     ~MainWindow() override;
 
-private slots:
-    // 统一日志显示
+public slots:
     void onLogInfo(const QString& info);
     void onLogError(const QString& error);
 
 private:
-    QTabWidget* m_tabWidget;    // 标签页
-    MqttModule* m_mqttModule;   // MQTT模块
-    SerialModule* m_serialModule; // 串口模块
-    QTextEdit* m_globalLogEdit; // 全局日志框
+    QTabWidget* m_tabWidget;
+    MqttUI* m_mqttModule;
+    SerialUI* m_serialModule;
+    QTextEdit* m_globalLogEdit;
+
+    // 模块实例
+    MqttModule* m_mqttModuleObj;
+    SerialModule* m_serialModuleObj;
 };
 
 #endif // MAINWINDOW_H

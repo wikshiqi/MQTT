@@ -1,66 +1,67 @@
-// SerialUI.h
 #ifndef SERIALUI_H
 #define SERIALUI_H
 
 #include <QWidget>
-#include <QVBoxLayout>
-#include <QTextEdit>
-#include <QPushButton>
-#include <QComboBox>
-#include <QCheckBox>
+#include <QString>
+#include <QByteArray>
 #include <QSerialPort>
 
-//#include "ElaTextEdit.h"
-#include "GlobalDef.h"
+// 定义串口配置结构体
+struct SerialConfig {
+    QString portName;
+    int baudRate;
+    QSerialPort::DataBits dataBits;
+    QSerialPort::StopBits stopBits;
+    QSerialPort::Parity parity;
+};
 
-// 纯UI层，无业务逻辑
+class QComboBox;
+class QPushButton;
+class QLineEdit;
+class QTextEdit;
+class QCheckBox;
+
 class SerialUI : public QWidget
 {
-Q_OBJECT
+Q_OBJECT // 必须添加Q_OBJECT宏
+
 public:
     explicit SerialUI(QWidget *parent = nullptr);
-    ~SerialUI() override;
-
-    // 获取UI配置（供Core层使用）
     SerialConfig getSerialConfig() const;
-    // 获取要发送的数据
     QByteArray getSendData() const;
-    // 更新UI状态（接收Core层通知）
     void updateSerialState(bool isOpen);
-    void appendReceivedData(const QString& data);
-    void showError(const QString& error);
-    QComboBox* m_portCombo;      // 串口选择
-    QComboBox* m_baudRateCombo;  // 波特率
-    QComboBox* m_dataBitsCombo;   // 数据位
-    QComboBox* m_parityCombo;     // 校验位
-    QComboBox* m_stopBitsCombo;   // 停止位
-    QPushButton* m_refreshBtn;    // 刷新串口
-    QPushButton* m_openBtn;       // 打开/关闭串口
-    QTextEdit* m_recvEdit;        // 接收区
-    QLineEdit* m_sendEdit;        // 发送区
-    QPushButton* m_sendBtn;       // 发送按钮
-    QCheckBox* m_hexSendCheck;    // 十六进制发送
-    QCheckBox* m_hexRecvCheck;    // 十六进制接收
-
-    // 串口核心变量
-    QSerialPort* m_serial;        // 串口对象
-    bool m_isPortOpen;            // 串口是否打开
-
+    void appendReceivedData(const QString &data);
+    void showError(const QString &error);
+    // 界面控件
+    QComboBox* m_portCombo;
+    QComboBox* m_baudRateCombo;
+    QComboBox* m_dataBitsCombo;
+    QComboBox* m_parityCombo;
+    QComboBox* m_stopBitsCombo;
+    QPushButton* m_refreshBtn;
+    QPushButton* m_openBtn;
+    QPushButton* m_sendBtn;
+    QLineEdit* m_sendEdit;
+    QTextEdit* m_recvEdit;
+    QCheckBox* m_hexSendCheck;
+    QCheckBox* m_hexRecvCheck;
 signals:
-    // UI事件信号（转发给Core层）
-    void openSerialClicked();
-    void closeSerialClicked();
-    void sendDataClicked();
+    // 声明缺失的信号
+    void openSerialPort();
+    void closeSerialPort();
+    void sendSerialData(const QByteArray& data);
+
+public slots:
+    void openSerialClicked(void);
+    void closeSerialClicked(void);
+    void sendDataClicked(void);
+    void onRefreshPortClicked();
 
 private:
-    // 初始化UI
     void initUI();
     void initStyle();
 
-    // ElaTools组件
 
 };
 
 #endif // SERIALUI_H
-
-

@@ -1,8 +1,14 @@
 ﻿#include "mainwindow.h"
+#include "UI/MqttUI.h"
+#include "UI/SerialUI.h"
+#include "mqttmodule.h"
+#include "serialmodule.h"
 #include <QVBoxLayout>
 #include <QGroupBox>
 #include <QDateTime>
 #include <QFont>
+#include <QTabWidget>
+#include <QTextEdit>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
@@ -19,8 +25,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     // 1. 标签页（MQTT + 串口）
     m_tabWidget = new QTabWidget(this);
-    m_mqttModule = new MqttModule(this);
-    m_serialModule = new SerialModule(this);
+    m_mqttModule = new MqttUI(this);
+    m_serialModule = new SerialUI(this);
     m_tabWidget->addTab(m_mqttModule, "MQTT（OneNET）");
     m_tabWidget->addTab(m_serialModule, "串口调试助手");
     mainLayout->addWidget(m_tabWidget);
@@ -34,13 +40,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     logLayout->addWidget(m_globalLogEdit);
     mainLayout->addWidget(logGroup, 1); // 占1份高度
 
-    // ========== 信号槽 ==========
+    // ========== 初始化模块并绑定信号槽 ==========
+    m_mqttModuleObj = new MqttModule(m_mqttModule, this);
+    m_serialModuleObj = new SerialModule(m_serialModule, this);
+
     // MQTT模块日志
-    connect(m_mqttModule, &MqttModule::logInfo, this, &MainWindow::onLogInfo);
-    connect(m_mqttModule, &MqttModule::logError, this, &MainWindow::onLogError);
+    connect(m_mqttModuleObj, &MqttModule::logInfo, this, &MainWindow::onLogInfo);
+    connect(m_mqttModuleObj, &MqttModule::logError, this, &MainWindow::onLogError);
     // 串口模块日志
-    connect(m_serialModule, &SerialModule::logInfo, this, &MainWindow::onLogInfo);
-    connect(m_serialModule, &SerialModule::logError, this, &MainWindow::onLogError);
+    connect(m_serialModuleObj, &SerialModule::logInfo, this, &MainWindow::onLogInfo);
+    connect(m_serialModuleObj, &SerialModule::logError, this, &MainWindow::onLogError);
 }
 
 MainWindow::~MainWindow() = default;

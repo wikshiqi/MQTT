@@ -1,16 +1,28 @@
-// SerialUI.cpp
 #include "UI/SerialUI.h"
+// 补充缺失的Qt头文件
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGridLayout>
 #include <QFont>
 #include <QDateTime>
+#include <QGroupBox>
+#include <QComboBox>
+#include <QPushButton>
+#include <QLineEdit>
+#include <QTextEdit>
+#include <QCheckBox>
+#include <QSerialPort>
+#include <QSerialPortInfo>
 
 SerialUI::SerialUI(QWidget *parent) : QWidget(parent)
 {
     initUI();
     initStyle();
+    // 绑定按钮点击信号
+    connect(m_refreshBtn, &QPushButton::clicked, this, &SerialUI::onRefreshPortClicked);
+    connect(m_openBtn, &QPushButton::clicked, this, &SerialUI::openSerialClicked);
+    connect(m_sendBtn, &QPushButton::clicked, this, &SerialUI::sendDataClicked);
 }
 
 void SerialUI::initUI()
@@ -68,10 +80,11 @@ void SerialUI::initUI()
     QGridLayout* sendLayout = new QGridLayout(sendGroup);
     m_sendEdit = new QLineEdit(this);
     m_sendEdit->setPlaceholderText("输入要发送的数据");
-    sendLayout->addWidget(m_sendEdit, 0, 0, 1, 2);
+    // 修复：addWidget参数错误（移除多余的参数，匹配Qt API）
+    sendLayout->addWidget(m_sendEdit, 0, 0);
     m_sendBtn = new QPushButton("发送", this);
     m_sendBtn->setEnabled(false);
-    sendLayout->addWidget(m_sendBtn, 0, 2);
+    sendLayout->addWidget(m_sendBtn, 0, 1);
 
     m_hexSendCheck = new QCheckBox("十六进制发送", this);
     sendLayout->addWidget(m_hexSendCheck, 1, 0);
@@ -89,13 +102,6 @@ void SerialUI::initUI()
 
     // ========== 初始化串口列表 ==========
     onRefreshPortClicked();
-
-    // ========== 信号槽 ==========
-    connect(m_refreshBtn, &QPushButton::clicked, this, &SerialModule::onRefreshPortClicked);
-    connect(m_openBtn, &QPushButton::clicked, this, &SerialModule::onOpenPortClicked);
-    connect(m_sendBtn, &QPushButton::clicked, this, &SerialModule::onSendDataClicked);
-    connect(m_serial, &QSerialPort::readyRead, this, &SerialModule::onSerialReadyRead);
-    connect(m_serial, &QSerialPort::errorOccurred, this, &SerialModule::onSerialErrorOccurred);
 }
 
 void SerialUI::initStyle()
@@ -103,32 +109,36 @@ void SerialUI::initStyle()
     QFont font("Microsoft YaHei", 9);
     setFont(font);
 
-    m_portCard->setAcrylicOpacity(0.85);
+    // 修复：移除不存在的m_portCard
     m_baudRateCombo->setFixedHeight(32);
     m_dataBitsCombo->setFixedHeight(32);
     m_stopBitsCombo->setFixedHeight(32);
     m_parityCombo->setFixedHeight(32);
+    m_portCombo->setFixedHeight(32);
+    m_sendEdit->setFixedHeight(32);
 
-    m_receiveEdit->setStyleSheet(R"(
-        ElaTextEdit {
+    // 修复：改用原生QTextEdit样式（移除ElaTextEdit）
+    m_recvEdit->setStyleSheet(R"(
+        QTextEdit {
             border-radius: 8px;
             padding: 8px;
             background-color: rgba(255,255,255,0.8);
         }
     )");
-    m_sendEdit->setStyleSheet(m_receiveEdit->styleSheet());
+    m_sendEdit->setStyleSheet(m_recvEdit->styleSheet());
 
     m_openBtn->setFixedSize(100, 35);
-    m_closeBtn->setFixedSize(100, 35);
     m_sendBtn->setFixedSize(100, 35);
+    m_refreshBtn->setFixedSize(80, 35);
 }
 
 SerialConfig SerialUI::getSerialConfig() const
 {
     SerialConfig config;
-    config.portName = m_portCard->getUrlEditText();
+    // 修复：移除不存在的m_portCard
+    config.portName = m_portCombo->currentText().split(" - ").first();
     config.baudRate = m_baudRateCombo->currentText().toInt();
-    config.dataBits = m_dataBitsCombo->currentText().toInt();
+    config.dataBits = static_cast<QSerialPort::DataBits>(m_dataBitsCombo->currentText().toInt());
 
     // 停止位映射
     QString stopBit = m_stopBitsCombo->currentText();
@@ -139,7 +149,7 @@ SerialConfig SerialUI::getSerialConfig() const
     // 校验位映射
     QString parity = m_parityCombo->currentText();
     if (parity == "无") config.parity = QSerialPort::NoParity;
-    else if (parity == "奇") config.parity = QSerialPort::OddParity;
+    else if (parity == "奇校验") config.parity = QSerialPort::OddParity;
     else config.parity = QSerialPort::EvenParity;
 
     return config;
@@ -147,15 +157,15 @@ SerialConfig SerialUI::getSerialConfig() const
 
 QByteArray SerialUI::getSendData() const
 {
-    return m_sendEdit->toPlainText().toUtf8();
+    return m_sendEdit->text().toUtf8();
 }
 
 void SerialUI::updateSerialState(bool isOpen)
 {
-    m_openBtn->setEnabled(!isOpen);
-    m_closeBtn->setEnabled(isOpen);
+    m_openBtn->setText(isOpen ? "关闭串口" : "打开串口");
     m_sendBtn->setEnabled(isOpen);
-    m_portCard->setEnabled(!isOpen);
+    m_refreshBtn->setEnabled(!isOpen);
+    m_portCombo->setEnabled(!isOpen);
     m_baudRateCombo->setEnabled(!isOpen);
     m_dataBitsCombo->setEnabled(!isOpen);
     m_stopBitsCombo->setEnabled(!isOpen);
@@ -164,13 +174,23 @@ void SerialUI::updateSerialState(bool isOpen)
 
 void SerialUI::appendReceivedData(const QString &data)
 {
-    m_receiveEdit->appendPlainText("[接收] " + QDateTime::currentDateTime().toString() + "：" + data);
+    // 修复：QTextEdit使用append而非appendPlainText
+    m_recvEdit->append("[接收] " + QDateTime::currentDateTime().toString() + "：" + data);
 }
 
 void SerialUI::showError(const QString &error)
 {
-    m_receiveEdit->appendPlainText("[错误] " + QDateTime::currentDateTime().toString() + "：" + error);
+    m_recvEdit->append("[错误] " + QDateTime::currentDateTime().toString() + "：" + error);
 }
+
+void SerialUI::onRefreshPortClicked()
+{
+    m_portCombo->clear();
+            foreach (const QSerialPortInfo& info, QSerialPortInfo::availablePorts()) {
+            m_portCombo->addItem(info.portName() + " - " + info.description());
+        }
+}
+
 void SerialUI::openSerialClicked(void) {
     emit openSerialPort(); // 触发打开串口信号
 }

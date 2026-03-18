@@ -2,81 +2,19 @@
 #include <QDateTime>
 #include <QMessageBox>
 
-MqttModule::MqttModule(QWidget *parent) : QWidget(parent)
-        , m_socket(new QTcpSocket(this))
-        , m_pingTimer(new QTimer(this))
-        , m_nextPacketId(1)
-        , m_keepAlive(60)
+MqttModule::MqttModule(MqttUI* ui, QWidget *parent) : QWidget(parent)
+, mqttUi(ui) // 初始化UI指针
+, m_socket(new QTcpSocket(this))
+, m_pingTimer(new QTimer(this))
+, m_nextPacketId(1)
+, m_keepAlive(60)
 {
-    // ========== 界面布局 ==========
-    QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(10);
-    mainLayout->setContentsMargins(15, 15, 15, 15);
-
-    // 1. 连接配置
-    QGroupBox* connectGroup = new QGroupBox("OneNET MQTT配置", this);
-    QGridLayout* connectLayout = new QGridLayout(connectGroup);
-    connectLayout->addWidget(new QLabel("Broker地址："), 0, 0);
-    m_hostEdit = new QLineEdit("mqtt.heclouds.com", this);
-    connectLayout->addWidget(m_hostEdit, 0, 1);
-    connectLayout->addWidget(new QLabel("端口："), 0, 2);
-    m_portEdit = new QLineEdit("1883", this);
-    connectLayout->addWidget(m_portEdit, 0, 3);
-
-    connectLayout->addWidget(new QLabel("ClientID："), 1, 0);
-    m_clientIdEdit = new QLineEdit("CLion_MQTT_001", this);
-    connectLayout->addWidget(m_clientIdEdit, 1, 1);
-    connectLayout->addWidget(new QLabel("产品ID："), 1, 2);
-    m_usernameEdit = new QLineEdit(this);
-    m_usernameEdit->setPlaceholderText("OneNET产品ID");
-    connectLayout->addWidget(m_usernameEdit, 1, 3);
-
-    connectLayout->addWidget(new QLabel("APIKey："), 2, 0);
-    m_passwordEdit = new QLineEdit(this);
-    m_passwordEdit->setPlaceholderText("OneNET设备APIKey");
-    m_passwordEdit->setEchoMode(QLineEdit::Password);
-    connectLayout->addWidget(m_passwordEdit, 2, 1, 1, 3);
-
-    m_connectBtn = new QPushButton("连接", this);
-    m_disconnectBtn = new QPushButton("断开", this);
-    m_disconnectBtn->setEnabled(false);
-    connectLayout->addWidget(m_connectBtn, 3, 1);
-    connectLayout->addWidget(m_disconnectBtn, 3, 2);
-    mainLayout->addWidget(connectGroup);
-
-    // 2. 订阅/发布
-    QGroupBox* pubSubGroup = new QGroupBox("订阅/发布", this);
-    QGridLayout* pubSubLayout = new QGridLayout(pubSubGroup);
-    pubSubLayout->addWidget(new QLabel("主题："), 0, 0);
-    m_topicEdit = new QLineEdit(this);
-    m_topicEdit->setPlaceholderText("/sys/产品ID/设备ID/thing/event/property/post");
-    pubSubLayout->addWidget(m_topicEdit, 0, 1);
-    m_subscribeBtn = new QPushButton("订阅", this);
-    m_subscribeBtn->setEnabled(false);
-    pubSubLayout->addWidget(m_subscribeBtn, 0, 2);
-
-    pubSubLayout->addWidget(new QLabel("消息："), 1, 0);
-    m_payloadEdit = new QLineEdit(this);
-    m_payloadEdit->setPlaceholderText("{\"temp\":25.5}");
-    pubSubLayout->addWidget(m_payloadEdit, 1, 1);
-    m_publishBtn = new QPushButton("发布", this);
-    m_publishBtn->setEnabled(false);
-    pubSubLayout->addWidget(m_publishBtn, 1, 2);
-    mainLayout->addWidget(pubSubGroup);
-
-    // 3. 日志显示
-    QGroupBox* logGroup = new QGroupBox("日志", this);
-    QVBoxLayout* logLayout = new QVBoxLayout(logGroup);
-    m_logEdit = new QTextEdit(this);
-    m_logEdit->setReadOnly(true);
-    logLayout->addWidget(m_logEdit);
-    mainLayout->addWidget(logGroup);
-
     // ========== 信号槽 ==========
-    connect(m_connectBtn, &QPushButton::clicked, this, &MqttModule::onConnectClicked);
-    connect(m_disconnectBtn, &QPushButton::clicked, this, &MqttModule::onDisconnectClicked);
-    connect(m_subscribeBtn, &QPushButton::clicked, this, &MqttModule::onSubscribeClicked);
-    connect(m_publishBtn, &QPushButton::clicked, this, &MqttModule::onPublishClicked);
+    // 修复：使用初始化后的m_mqttUi指针
+    connect(mqttUi->m_connectBtn, &QPushButton::clicked, this, &MqttModule::onConnectClicked);
+    connect(mqttUi->m_disconnectBtn, &QPushButton::clicked, this, &MqttModule::onDisconnectClicked);
+    connect(mqttUi->m_subscribeBtn, &QPushButton::clicked, this, &MqttModule::onSubscribeClicked);
+    connect(mqttUi->m_publishBtn, &QPushButton::clicked, this, &MqttModule::onPublishClicked);
     connect(m_socket, &QTcpSocket::stateChanged, this, &MqttModule::onSocketStateChanged);
     connect(m_socket, &QTcpSocket::readyRead, this, &MqttModule::onReadyRead);
     connect(m_pingTimer, &QTimer::timeout, this, &MqttModule::onPingTimerTimeout);
@@ -87,11 +25,11 @@ MqttModule::~MqttModule() = default;
 // 连接OneNET
 void MqttModule::onConnectClicked()
 {
-    QString host = m_hostEdit->text().trimmed();
-    quint16 port = m_portEdit->text().toUShort();
-    QString clientId = m_clientIdEdit->text().trimmed();
-    QString username = m_usernameEdit->text().trimmed();
-    QString password = m_passwordEdit->text().trimmed();
+    QString host = mqttUi->m_hostEdit->text().trimmed();
+    quint16 port = mqttUi->m_portEdit->text().toUShort();
+    QString clientId = mqttUi->m_clientIdEdit->text().trimmed();
+    QString username = mqttUi->m_usernameEdit->text().trimmed();
+    QString password = mqttUi->m_passwordEdit->text().trimmed();
 
     if (host.isEmpty() || username.isEmpty() || password.isEmpty()) {
         QMessageBox::warning(this, "错误", "请填写完整配置！");
@@ -113,7 +51,7 @@ void MqttModule::onDisconnectClicked()
 // 订阅主题
 void MqttModule::onSubscribeClicked()
 {
-    QString topic = m_topicEdit->text().trimmed();
+    QString topic = mqttUi->m_topicEdit->text().trimmed();
     if (topic.isEmpty()) {
         QMessageBox::warning(this, "错误", "请填写订阅主题！");
         return;
@@ -126,8 +64,8 @@ void MqttModule::onSubscribeClicked()
 // 发布消息
 void MqttModule::onPublishClicked()
 {
-    QString topic = m_topicEdit->text().trimmed();
-    QByteArray payload = m_payloadEdit->text().toUtf8();
+    QString topic = mqttUi->m_topicEdit->text().trimmed();
+    QByteArray payload = mqttUi->m_payloadEdit->text().toUtf8();
     if (topic.isEmpty() || payload.isEmpty()) {
         QMessageBox::warning(this, "错误", "请填写主题和消息！");
         return;
@@ -141,18 +79,18 @@ void MqttModule::onPublishClicked()
 void MqttModule::onSocketStateChanged(QAbstractSocket::SocketState state)
 {
     if (state == QTcpSocket::ConnectedState) {
-        m_connectBtn->setEnabled(false);
-        m_disconnectBtn->setEnabled(true);
-        m_subscribeBtn->setEnabled(true);
-        m_publishBtn->setEnabled(true);
+        mqttUi->m_connectBtn->setEnabled(false);
+        mqttUi->m_disconnectBtn->setEnabled(true);
+        mqttUi->m_subscribeBtn->setEnabled(true);
+        mqttUi->m_publishBtn->setEnabled(true);
         // 发送CONNECT报文（带OneNET认证）
-        m_socket->write(buildConnectPacket(m_clientIdEdit->text(), m_usernameEdit->text(), m_passwordEdit->text()));
+        m_socket->write(buildConnectPacket(mqttUi->m_clientIdEdit->text(), mqttUi->m_usernameEdit->text(), mqttUi->m_passwordEdit->text()));
         emit logInfo(QString("[%1] TCP连接成功，发送认证报文").arg(QDateTime::currentDateTime().toString()));
     } else if (state == QTcpSocket::UnconnectedState) {
-        m_connectBtn->setEnabled(true);
-        m_disconnectBtn->setEnabled(false);
-        m_subscribeBtn->setEnabled(false);
-        m_publishBtn->setEnabled(false);
+        mqttUi->m_connectBtn->setEnabled(true);
+        mqttUi->m_disconnectBtn->setEnabled(false);
+        mqttUi->m_subscribeBtn->setEnabled(false);
+        mqttUi->m_publishBtn->setEnabled(false);
         emit logInfo(QString("[%1] TCP断开连接").arg(QDateTime::currentDateTime().toString()));
     }
 }

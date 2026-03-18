@@ -11,7 +11,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
-
+#include <UI/MqttUI.h>
 // MQTT报文类型
 enum MqttPacketType {
     CONNECT = 1, CONNACK = 2, PUBLISH = 3, SUBSCRIBE = 8, SUBACK = 9, PINGREQ = 12, PINGRESP = 13
@@ -21,7 +21,7 @@ class MqttModule : public QWidget
 {
 Q_OBJECT
 public:
-    explicit MqttModule(QWidget *parent = nullptr);
+    explicit MqttModule(MqttUI* ui, QWidget *parent = nullptr);
     ~MqttModule() override;
 
 signals:
@@ -41,19 +41,19 @@ private slots:
 
 private:
     // 界面控件
-    QLineEdit* m_hostEdit;
-    QLineEdit* m_portEdit;
-    QLineEdit* m_clientIdEdit;
-    QLineEdit* m_usernameEdit;
-    QLineEdit* m_passwordEdit;
-    QLineEdit* m_topicEdit;
-    QLineEdit* m_payloadEdit;
-    QTextEdit* m_logEdit;
-    QPushButton* m_connectBtn;
-    QPushButton* m_disconnectBtn;
-    QPushButton* m_subscribeBtn;
-    QPushButton* m_publishBtn;
-
+//    QLineEdit* m_hostEdit;
+//    QLineEdit* m_portEdit;
+//    QLineEdit* m_clientIdEdit;
+//    QLineEdit* m_usernameEdit;
+//    QLineEdit* m_passwordEdit;
+//    QLineEdit* m_topicEdit;
+//    QLineEdit* m_payloadEdit;
+//    QTextEdit* m_logEdit;
+//    QPushButton* m_connectBtn;
+//    QPushButton* m_disconnectBtn;
+//    QPushButton* m_subscribeBtn;
+//    QPushButton* m_publishBtn;
+    MqttUI* mqttUi;
     // MQTT核心变量
     QTcpSocket* m_socket;
     QTimer* m_pingTimer;
