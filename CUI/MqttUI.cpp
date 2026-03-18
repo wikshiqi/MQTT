@@ -34,23 +34,25 @@ void MqttUI::initUI()
     QGroupBox* connectGroup = new QGroupBox("OneNET MQTT配置", this);
     QGridLayout* connectLayout = new QGridLayout(connectGroup);
     connectLayout->addWidget(new QLabel("Broker地址："), 0, 0);
-    m_hostEdit = new QLineEdit("mqtt.heclouds.com", this);
+    m_hostEdit = new QLineEdit("mqtts.heclouds.com", this);
     connectLayout->addWidget(m_hostEdit, 0, 1);
     connectLayout->addWidget(new QLabel("端口："), 0, 2);
     m_portEdit = new QLineEdit("1883", this);
     connectLayout->addWidget(m_portEdit, 0, 3);
 
     connectLayout->addWidget(new QLabel("ClientID："), 1, 0);
-    m_clientIdEdit = new QLineEdit("CLion_MQTT_001", this);
+    m_clientIdEdit = new QLineEdit("DHT11", this);
     connectLayout->addWidget(m_clientIdEdit, 1, 1);
     connectLayout->addWidget(new QLabel("产品ID："), 1, 2);
     m_usernameEdit = new QLineEdit(this);
     m_usernameEdit->setPlaceholderText("OneNET产品ID");
+    m_usernameEdit->setText("5Tgf5AGpeZ");
     connectLayout->addWidget(m_usernameEdit, 1, 3);
 
     connectLayout->addWidget(new QLabel("APIKey："), 2, 0);
     m_passwordEdit = new QLineEdit(this);
     m_passwordEdit->setPlaceholderText("OneNET设备APIKey");
+    m_passwordEdit->setText("version=2018-10-31&res=products%2F5Tgf5AGpeZ%2Fdevices%2FDHT11&et=2076749615&method=md5&sign=c6mHqy5NX1d2%2B1s9carmhw%3D%3D");
     m_passwordEdit->setEchoMode(QLineEdit::Password);
     connectLayout->addWidget(m_passwordEdit, 2, 1, 1, 3);
 
@@ -67,6 +69,7 @@ void MqttUI::initUI()
     pubSubLayout->addWidget(new QLabel("主题："), 0, 0);
     m_topicEdit = new QLineEdit(this);
     m_topicEdit->setPlaceholderText("/sys/产品ID/设备ID/thing/event/property/post");
+    m_topicEdit->setText("$sys/5Tgf5AGpeZ/DHT11/thing/property/post/reply");
     pubSubLayout->addWidget(m_topicEdit, 0, 1);
     m_subscribeBtn = new QPushButton("订阅", this);
     m_subscribeBtn->setEnabled(false);

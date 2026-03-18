@@ -64,7 +64,7 @@ void MqttModule::onSubscribeClicked()
 // 发布消息
 void MqttModule::onPublishClicked()
 {
-    QString topic = mqttUi->m_topicEdit->text().trimmed();
+    QString topic = post_topic;
     QByteArray payload = mqttUi->m_payloadEdit->text().toUtf8();
     if (topic.isEmpty() || payload.isEmpty()) {
         QMessageBox::warning(this, "错误", "请填写主题和消息！");

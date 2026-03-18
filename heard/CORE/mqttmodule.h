@@ -59,7 +59,7 @@ private:
     QTimer* m_pingTimer;
     quint16 m_nextPacketId;
     quint32 m_keepAlive;
-
+    QString post_topic="$sys/5Tgf5AGpeZ/DHT11/thing/property/post";
     // MQTT协议封装
     QByteArray encodeFixedHeader(MqttPacketType type, quint32 remainingLength);
     QByteArray encodeRemainingLength(quint32 length);
