@@ -144,8 +144,11 @@ QByteArray MqttModule::encodeRemainingLength(quint32 length)
 {
     QByteArray encoded;
     do {
+        // 1. 取低7位
         quint8 byte = length % 128;
+        // 2. 长度右移7位（处理下一个字节）
         length /= 128;
+        // 3. 如果还有后续字节，设置最高位为1（表示后续还有字节）
         if (length > 0) byte |= 0x80;
         encoded.append(static_cast<char>(byte));
     } while (length > 0);
@@ -154,21 +157,31 @@ QByteArray MqttModule::encodeRemainingLength(quint32 length)
 
 QByteArray MqttModule::buildConnectPacket(const QString& clientId, const QString& username, const QString& password)
 {
+    // ========== 1. 可变报头 ==========
     QByteArray variableHeader;
+    // 协议名：MQTT（长度2字节+字符串）
     variableHeader.append(static_cast<char>(0x00)).append(static_cast<char>(0x04)).append("MQTT");
+    // 协议级别：0x04 = MQTT 3.1.1
     variableHeader.append(static_cast<char>(0x04));
-    quint8 connectFlags = 0x02 | 0x80 | 0x40; // CleanSession + 用户名 + 密码
+    // 连接标志：0x02(CleanSession) | 0x80(用户名标志) | 0x40(密码标志)
+    quint8 connectFlags = 0x02 | 0x80 | 0x40;
     variableHeader.append(static_cast<char>(connectFlags));
+    // 保持连接时间（2字节，单位秒）
     variableHeader.append(static_cast<char>(m_keepAlive >> 8)).append(static_cast<char>(m_keepAlive & 0xFF));
 
+    // ========== 2. 有效载荷 ==========
     QByteArray payload;
+    // ClientID（2字节长度+字符串）
     quint16 len = clientId.length();
     payload.append(static_cast<char>(len >> 8)).append(static_cast<char>(len & 0xFF)).append(clientId.toUtf8());
+    // 用户名（2字节长度+字符串）
     len = username.length();
     payload.append(static_cast<char>(len >> 8)).append(static_cast<char>(len & 0xFF)).append(username.toUtf8());
+    // 密码（2字节长度+字符串）
     len = password.length();
     payload.append(static_cast<char>(len >> 8)).append(static_cast<char>(len & 0xFF)).append(password.toUtf8());
 
+    // ========== 3. 拼接完整报文 ==========
     QByteArray packet = encodeFixedHeader(CONNECT, variableHeader.length() + payload.length());
     packet.append(variableHeader).append(payload);
     return packet;
