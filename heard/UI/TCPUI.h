@@ -4,9 +4,23 @@
 
 #ifndef MQTT_TCPUI_H
 #define MQTT_TCPUI_H
+#include <QWidget>
+#include <QString>
+#include <QByteArray>
+
+class TCPUI: public QWidget
+{
+Q_OBJECT // 必须添加Q_OBJECT宏以支持信号槽
+public:
 
 
-class TCPUI {
+
+
+private:
+
+
+
+
 
 };
 
