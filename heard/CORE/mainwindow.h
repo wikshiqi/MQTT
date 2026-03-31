@@ -4,11 +4,14 @@
 #include <QMainWindow>
 #include <QTabWidget>
 #include <QTextEdit>
+#include "ChartUI.h"
 
 class MqttUI;
 class SerialUI;
 class MqttModule;
 class SerialModule;
+class DataPanel;
+class ChartUI;
 
 class MainWindow : public QMainWindow
 {
@@ -28,7 +31,7 @@ private:
     MqttUI* m_mqttModule;
     SerialUI* m_serialModule;
     QTextEdit* m_globalLogEdit;
-
+    ChartUI *m_chartUI;
     // 模块实例
     MqttModule* m_mqttModuleObj;
     SerialModule* m_serialModuleObj;

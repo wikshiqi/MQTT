@@ -5,7 +5,6 @@
 #include <QString>
 #include <QByteArray>
 
-// 定义MQTT配置结构体
 struct MqttConfig {
     QString broker;
     int port;
@@ -21,8 +20,7 @@ class QTextEdit;
 
 class MqttUI : public QWidget
 {
-Q_OBJECT // 必须添加Q_OBJECT宏以支持信号槽
-
+Q_OBJECT
 public:
     explicit MqttUI(QWidget *parent = nullptr);
     MqttConfig getMqttConfig() const;
@@ -33,7 +31,6 @@ public:
     void appendReceivedMsg(const QString &topic, const QString &msg);
     void showError(const QString &error);
 
-    // 界面控件（与cpp中定义的变量名保持一致）
     QLineEdit* m_hostEdit;
     QLineEdit* m_portEdit;
     QLineEdit* m_clientIdEdit;
@@ -46,24 +43,28 @@ public:
     QPushButton* m_subscribeBtn;
     QPushButton* m_publishBtn;
     QTextEdit* m_logEdit;
+
+    // ========== 新增：控制按钮 ==========
+    QPushButton* m_btnSwitch1;
+    QPushButton* m_btnSwitch2;
+
 signals:
-    // 声明缺失的信号
     void connectMqtt();
     void disconnectMqtt();
     void publishMessage(const QString& topic, const QByteArray& msg);
     void subscribeTopic(const QString& topic);
+    void sendSwitch1();    // 控制开关1
+    void sendSwitch2();    // 控制开关2
 
 public slots:
-    void connectMqttClicked(void);
-    void disconnectMqttClicked(void);
-    void publishMsgClicked(void);
-    void subscribeTopicClicked(void);
+    void connectMqttClicked();
+    void disconnectMqttClicked();
+    void publishMsgClicked();
+    void subscribeTopicClicked();
 
 private:
     void initUI();
     void initStyle();
-
-
 };
 
-#endif // MQTTUI_H
+#endif

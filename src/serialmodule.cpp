@@ -1,7 +1,7 @@
 ﻿#include "serialmodule.h"
 #include <QDateTime>
 #include <QMessageBox>
-#include <QRegExp>
+//#include <QRegExp>
 
 SerialModule::SerialModule(SerialUI*ui,QWidget *parent) : QWidget(parent)
         ,serialUi(ui)
@@ -108,7 +108,7 @@ void SerialModule::onSerialReadyRead()
         recvStr = byteArrayToHex(recvData);
         emit logInfo(QString("[%1] 接收（十六进制）：%2").arg(QDateTime::currentDateTime().toString()).arg(recvStr));
     } else {
-        recvStr = QString::fromUtf8(recvData);
+        recvStr = QString::fromLocal8Bit(recvData);
         emit logInfo(QString("[%1] 接收：%2").arg(QDateTime::currentDateTime().toString()).arg(recvStr));
     }
 
