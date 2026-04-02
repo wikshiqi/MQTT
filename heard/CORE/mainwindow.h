@@ -10,7 +10,6 @@ class MqttUI;
 class SerialUI;
 class MqttModule;
 class SerialModule;
-class DataPanel;
 class ChartUI;
 
 class MainWindow : public QMainWindow

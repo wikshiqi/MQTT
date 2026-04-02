@@ -1,7 +1,7 @@
 ﻿#include "mainwindow.h"
-#include "UI/MqttUI.h"
-#include "UI/SerialUI.h"
-#include "UI/ChartUI.h"
+#include "MqttUI.h"
+#include "SerialUI.h"
+#include "ChartUI.h"
 #include "mqttmodule.h"
 #include "serialmodule.h"
 #include <QVBoxLayout>
@@ -11,7 +11,7 @@
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
-    setWindowTitle("MQTT+串口调试助手(QMQTT版)");
+    setWindowTitle("MQTT");
     setMinimumSize(1000,700);
 
     QWidget* c = new QWidget(this);
@@ -23,11 +23,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     m_tabWidget = new QTabWidget;
     m_mqttModule = new MqttUI;
     m_serialModule = new SerialUI;
-    m_chartUI = new ChartUI; // 图表页面
+    m_chartUI = new ChartUI;
 
-    m_tabWidget->addTab(m_mqttModule, "MQTT（OneNET）");
+    m_tabWidget->addTab(m_mqttModule, "MQTT");
     m_tabWidget->addTab(m_serialModule, "串口调试助手");
-    m_tabWidget->addTab(m_chartUI, "📊 数据图表"); // 新增
+    m_tabWidget->addTab(m_chartUI, "📊 数据图表");
 
     l->addWidget(m_tabWidget);
 
@@ -42,14 +42,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     m_mqttModuleObj = new MqttModule(m_mqttModule);
     m_serialModuleObj = new SerialModule(m_serialModule);
 
+
+
     connect(m_mqttModuleObj, &MqttModule::logInfo, this, &MainWindow::onLogInfo);
     connect(m_mqttModuleObj, &MqttModule::logError, this, &MainWindow::onLogError);
+    connect(m_mqttModuleObj, &MqttModule::sendDataToChart, m_chartUI, &ChartUI::updateOneNetData);
     connect(m_serialModuleObj, &SerialModule::logInfo, this, &MainWindow::onLogInfo);
     connect(m_serialModuleObj, &SerialModule::logError, this, &MainWindow::onLogError);
-
-    // MQTT数据 → 图表
-    connect(m_mqttModuleObj, &MqttModule::sendDataToChart,
-            m_chartUI, &ChartUI::updateOneNetData);
 }
 
 MainWindow::~MainWindow() = default;

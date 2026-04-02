@@ -1,15 +1,10 @@
-#include "UI/MqttUI.h"
+#include "MqttUI.h"
 #include <QLabel>
 #include <QVBoxLayout>
-#include <QHBoxLayout>
 #include <QGridLayout>
 #include <QFont>
 #include <QDateTime>
 #include <QGroupBox>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QTextEdit>
-#include <QCheckBox>
 
 MqttUI::MqttUI(QWidget *parent) : QWidget(parent)
 {
@@ -20,10 +15,8 @@ MqttUI::MqttUI(QWidget *parent) : QWidget(parent)
     connect(m_disconnectBtn, &QPushButton::clicked, this, &MqttUI::disconnectMqttClicked);
     connect(m_subscribeBtn, &QPushButton::clicked, this, &MqttUI::subscribeTopicClicked);
     connect(m_publishBtn, &QPushButton::clicked, this, &MqttUI::publishMsgClicked);
-
-    // ========== 绑定控制按钮 ==========
-    connect(m_btnSwitch1, &QPushButton::clicked, this, &MqttUI::sendSwitch1);
-    connect(m_btnSwitch2, &QPushButton::clicked, this, &MqttUI::sendSwitch2);
+    connect(m_btnSwitch1, &QPushButton::clicked, this, &MqttUI::sendSwitch1d);
+    connect(m_btnSwitch2, &QPushButton::clicked, this, &MqttUI::sendSwitch2d);
 }
 
 void MqttUI::initUI()
@@ -32,11 +25,11 @@ void MqttUI::initUI()
     mainLayout->setSpacing(10);
     mainLayout->setContentsMargins(15,15,15,15);
 
-    // === 连接配置 ===
+    // 连接配置
     QGroupBox* connectGroup = new QGroupBox("OneNET MQTT配置", this);
     QGridLayout* connectLayout = new QGridLayout(connectGroup);
     connectLayout->addWidget(new QLabel("Broker地址："), 0,0);
-    m_hostEdit = new QLineEdit("mqtts.heclouds.com");
+    m_hostEdit = new QLineEdit("183.230.40.96");
     connectLayout->addWidget(m_hostEdit,0,1);
     connectLayout->addWidget(new QLabel("端口："),0,2);
     m_portEdit = new QLineEdit("1883");
@@ -63,12 +56,12 @@ void MqttUI::initUI()
     connectLayout->addWidget(m_disconnectBtn,3,2);
     mainLayout->addWidget(connectGroup);
 
-    // === 订阅发布 ===
-    QGroupBox* pubSubGroup = new QGroupBox("订阅/发布", this);
+    // 订阅发布
+    QGroupBox* pubSubGroup = new QGroupBox("订阅/发送消息", this);
     QGridLayout* pubSubLayout = new QGridLayout(pubSubGroup);
     pubSubLayout->addWidget(new QLabel("主题："),0,0);
     m_topicEdit = new QLineEdit;
-    m_topicEdit->setText("$sys/5Tgf5AGpeZ/DHT11/thing/property/post/reply");
+    m_topicEdit->setText("$/sys/5Tgf5AGpeZ/DHT11/thing/event/property/post");
     pubSubLayout->addWidget(m_topicEdit,0,1);
     m_subscribeBtn = new QPushButton("订阅");
     pubSubLayout->addWidget(m_subscribeBtn,0,2);
@@ -80,7 +73,7 @@ void MqttUI::initUI()
     pubSubLayout->addWidget(m_publishBtn,1,2);
     mainLayout->addWidget(pubSubGroup);
 
-    // ====================== 新增：远程控制区 ======================
+    // 远程控制区
     QGroupBox* controlGroup = new QGroupBox("下位机控制", this);
     QGridLayout* controlLayout = new QGridLayout(controlGroup);
     m_btnSwitch1 = new QPushButton("开关1");
@@ -89,10 +82,9 @@ void MqttUI::initUI()
     m_btnSwitch2->setStyleSheet("background:#5a8dee; color:white;");
     controlLayout->addWidget(m_btnSwitch1,0,0);
     controlLayout->addWidget(m_btnSwitch2,0,1);
-    mainLayout->addWidget(reinterpret_cast<QWidget *>(controlLayout));
-    // =================================================================
+    mainLayout->addWidget(controlGroup);
 
-    // === 日志 ===
+    // 日志
     QGroupBox* logGroup = new QGroupBox("日志", this);
     QVBoxLayout* logLayout = new QVBoxLayout(logGroup);
     m_logEdit = new QTextEdit;
@@ -126,7 +118,8 @@ void MqttUI::initStyle()
     m_btnSwitch2->setFixedSize(100,35);
 }
 
-MqttConfig MqttUI::getMqttConfig() const {
+MqttConfig MqttUI::getMqttConfig() const
+{
     MqttConfig c;
     c.broker = m_hostEdit->text();
     c.port = m_portEdit->text().toInt();
@@ -136,27 +129,39 @@ MqttConfig MqttUI::getMqttConfig() const {
     c.autoReconnect = true;
     return c;
 }
-QString MqttUI::getPublishTopic() const {return m_topicEdit->text();}
-QByteArray MqttUI::getPublishMsg() const {return m_payloadEdit->text().toUtf8();}
-QString MqttUI::getSubscribeTopic() const {return m_topicEdit->text();}
 
-void MqttUI::updateMqttState(bool en){
+QString MqttUI::getPublishTopic() const { return m_topicEdit->text(); }
+QByteArray MqttUI::getPublishMsg() const { return m_payloadEdit->text().toUtf8(); }
+QString MqttUI::getSubscribeTopic() const { return m_topicEdit->text(); }
+
+void MqttUI::updateMqttState(bool en)
+{
     m_connectBtn->setEnabled(!en);
     m_disconnectBtn->setEnabled(en);
     m_publishBtn->setEnabled(en);
     m_subscribeBtn->setEnabled(en);
-    m_btnSwitch1->setEnabled(en); // 按钮随连接状态使能
+    m_btnSwitch1->setEnabled(en);
     m_btnSwitch2->setEnabled(en);
 }
 
-void MqttUI::appendReceivedMsg(const QString &t, const QString &m){
-    m_logEdit->append(QString("[%1] %2 -> %3").arg(QDateTime::currentDateTime().toString(),t,m));
+void MqttUI::appendReceivedMsg(const QString &t, const QString &m)
+{
+    m_logEdit->append(QString("[%1] %2 -> %3").arg(QDateTime::currentDateTime().toString(), t, m));
 }
-void MqttUI::showError(const QString &e){
+
+void MqttUI::showError(const QString &e)
+{
     m_logEdit->append("[错误] " + QDateTime::currentDateTime().toString() + "：" + e);
 }
 
-void MqttUI::connectMqttClicked(){emit connectMqtt();}
-void MqttUI::disconnectMqttClicked(){emit disconnectMqtt();}
-void MqttUI::publishMsgClicked(){emit publishMessage(getPublishTopic(),getPublishMsg());}
-void MqttUI::subscribeTopicClicked(){emit subscribeTopic(getSubscribeTopic());}
+void MqttUI::showInfo(const QString &info)
+{
+    m_logEdit->append("[信息] " + QDateTime::currentDateTime().toString() + "：" + info);
+}
+
+void MqttUI::connectMqttClicked() { emit connectMqtt(); }
+void MqttUI::disconnectMqttClicked() { emit disconnectMqtt(); }
+void MqttUI::publishMsgClicked() { emit publishMessage(getPublishTopic(), getPublishMsg()); }
+void MqttUI::subscribeTopicClicked() { emit subscribeTopic(getSubscribeTopic()); }
+void MqttUI::sendSwitch1d() { emit sendSwitch1(); }
+void MqttUI::sendSwitch2d() { emit sendSwitch2(); }
