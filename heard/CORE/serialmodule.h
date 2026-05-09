@@ -15,11 +15,11 @@
 #include <QCheckBox>
 #include <QDebug>
 #include <UI/SerialUI.h>
-class SerialModule : public QWidget
+class SerialModule : public QObject
 {
     Q_OBJECT
 public:
-    explicit SerialModule(SerialUI*ui, QWidget *parent = nullptr);
+    explicit SerialModule(SerialUI*ui, QObject  *parent = nullptr);
     ~SerialModule() override;
 
 signals:
@@ -36,19 +36,7 @@ private slots:
     void onSerialErrorOccurred(QSerialPort::SerialPortError error); // 串口错误
 
 private:
-//    // 界面控件
-//    QComboBox* m_portCombo;      // 串口选择
-//    QComboBox* m_baudRateCombo;  // 波特率
-//    QComboBox* m_dataBitsCombo;   // 数据位
-//    QComboBox* m_parityCombo;     // 校验位
-//    QComboBox* m_stopBitsCombo;   // 停止位
-//    QPushButton* m_refreshBtn;    // 刷新串口
-//    QPushButton* m_openBtn;       // 打开/关闭串口
-//    QTextEdit* m_recvEdit;        // 接收区
-//    QLineEdit* m_sendEdit;        // 发送区
-//    QPushButton* m_sendBtn;       // 发送按钮
-//    QCheckBox* m_hexSendCheck;    // 十六进制发送
-//    QCheckBox* m_hexRecvCheck;    // 十六进制接收
+
     SerialUI *serialUi;
     // 串口核心变量
     QSerialPort* m_serial;        // 串口对象

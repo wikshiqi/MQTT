@@ -39,9 +39,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     lg->addWidget(m_globalLogEdit);
     l->addWidget(g,1);
 
-    m_mqttModuleObj = new MqttModule(m_mqttModule);
-    m_serialModuleObj = new SerialModule(m_serialModule);
 
+    m_serialModuleObj = new SerialModule(m_serialModule);
+    m_mqttModuleObj = new MqttModule(m_mqttModule);
+
+
+    m_backend = new BackendClient(this);
+    connect(m_backend, &BackendClient::logInfo, this, &MainWindow::onLogInfo);
+    connect(m_backend, &BackendClient::logError, this, &MainWindow::onLogError);
 
 
     connect(m_mqttModuleObj, &MqttModule::logInfo, this, &MainWindow::onLogInfo);

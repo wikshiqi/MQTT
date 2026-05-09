@@ -1,145 +1,139 @@
 ﻿#include "mqttmodule.h"
-#include "MqttUI.h"
+#include "BackendClient.h"
+#include <QMessageBox>
 #include <QJsonDocument>
-#include <QMqttTopicFilter>
-#include <QMqttSubscription>
-#include <QJsonObject>
-#include <QDebug>
+#include <QTimer>
 
 MqttModule::MqttModule(MqttUI* ui, QWidget *parent)
-        : QWidget(parent), m_ui(ui), m_client(nullptr)
+        : QWidget(parent)
+        , mqttUi(ui)
+        , m_client(new QMqttClient()) // 注意这里加了 this 作为父对象
 {
-    m_client = new QMqttClient(this);
-    if (!m_client) {
-        m_ui->showError("FATAL: 无法创建 QMqttClient！");
-        return;
-    }
 
-    m_postTopic = "$/sys/5Tgf5AGpeZ/DHT11/thing/event/property/post";
 
-    if (!m_ui) {
-        qWarning() << "FATAL: MqttUI pointer is null!";
-        return;
-    }
+    // 按钮绑定
+    connect(mqttUi->m_connectBtn,    &QPushButton::clicked,          this, &MqttModule::onConnectClicked);
+    connect(mqttUi->m_disconnectBtn, &QPushButton::clicked,          this, &MqttModule::onDisconnectClicked);
+    connect(mqttUi->m_subscribeBtn,  &QPushButton::clicked,          this, &MqttModule::onSubscribeClicked);
+    connect(mqttUi->m_publishBtn,    &QPushButton::clicked,          this, &MqttModule::onPublishClicked);
 
-    // 连接 UI 信号
-    connect(m_ui, &MqttUI::connectMqtt,       this, &MqttModule::connectToMqtt);
-    connect(m_ui, &MqttUI::disconnectMqtt,    this, &MqttModule::disconnectFromMqtt);
-    connect(m_ui, &MqttUI::subscribeTopic,    this, &MqttModule::subscribe);
-    connect(m_ui, &MqttUI::publishMessage,    this, &MqttModule::publish);
-    connect(m_ui, &MqttUI::sendSwitch1,       this, &MqttModule::sendSwitch1);
-    connect(m_ui, &MqttUI::sendSwitch2,       this, &MqttModule::sendSwitch2);
+    // MQTT 状态监听
+    connect(m_client, &QMqttClient::connected,          this, &MqttModule::onClientConnected);
+    connect(m_client, &QMqttClient::disconnected,       this, &MqttModule::onClientDisconnected);
+    connect(m_client, &QMqttClient::messageReceived,    this, &MqttModule::onMessageReceived);
+    connect(m_client, &QMqttClient::errorChanged,       this, &MqttModule::onClientError);
 
-    // 连接 m_client 信号
-    connect(m_client, &QMqttClient::stateChanged,    this, &MqttModule::onStateChanged);
-    connect(m_client, &QMqttClient::messageReceived, this, &MqttModule::onMessageReceived);
+    // 关键配置
+    m_client->setProtocolVersion(QMqttClient::MQTT_3_1_1);
+    m_client->setKeepAlive(60);
+    m_client->setCleanSession(true);
 }
 
 MqttModule::~MqttModule()
 {
-    // m_client 作为子对象自动析构
-}
-
-void MqttModule::connectToMqtt()
-{
-    if (!m_client) {
-        m_ui->showError("MQTT client 不可用");
-        return;
-    }
-    auto c = m_ui->getMqttConfig();
-    m_client->setHostname(c.broker);
-    m_client->setPort(c.port);
-    m_client->setClientId(c.clientId);
-    m_client->setUsername(c.username);
-    m_client->setPassword(c.password);
-    m_client->connectToHost();
-    m_ui->showInfo("正在连接 OneNET...");
-}
-
-void MqttModule::disconnectFromMqtt()
-{
-    if (m_client) {
+    if (m_client->state() == QMqttClient::Connected) {
         m_client->disconnectFromHost();
     }
 }
 
-void MqttModule::subscribe(const QString& t)
+void MqttModule::onClientError(QMqttClient::ClientError error)
 {
-    if (!m_client) {
-        m_ui->showError("MQTT client 不可用");
-        return;
+    QString errStr;
+    switch (error) {
+        case 0:   errStr = "无错误"; break;
+        case 256: errStr = "协议版本错误"; break;
+        case 257: errStr = "ClientID 格式错误"; break;
+        case 258: errStr = "服务器不可用/连接超时"; break;
+        case 259: errStr = "用户名或密码错误"; break;
+        case 260: errStr = "未授权（设备/产品不匹配）"; break;
+        default:  errStr = "未知错误码：" + QString::number(error);
     }
-    if (m_client->state() != QMqttClient::Connected) {
-        m_ui->showError("MQTT 未连接，无法订阅");
-        return;
-    }
-    QMqttTopicFilter filter(t);
-    QMqttSubscription *sub = m_client->subscribe(filter);
-    if (!sub) {
-        m_ui->showError(QString("订阅失败：无效主题或网络错误 (%1)").arg(t));
-    } else {
-        m_ui->showInfo(QString("已发送订阅请求，主题：%1").arg(t));
-    }
+    emit logError("❌ 连接失败：" + errStr);
 }
 
-void MqttModule::publish(const QString& t, const QByteArray& d)
+void MqttModule::onConnectClicked()
 {
-    if (!m_client) {
-        m_ui->showError("MQTT client 不可用");
-        return;
-    }
-    if (m_client->state() != QMqttClient::Connected) {
-        m_ui->showError("MQTT 未连接，无法发布");
-        return;
-    }
-    qint32 pubId = m_client->publish(t, d);
-    if (pubId == -1) {
-        m_ui->showError(QString("发布失败：主题 %1").arg(t));
-    } else {
-        m_ui->showInfo(QString("已发布消息，发布ID：%1").arg(pubId));
-    }
+    auto config = mqttUi->getMqttConfig();
+
+    emit logInfo("主机：" + config.broker);
+    emit logInfo("端口：" + QString::number(config.port));
+    emit logInfo("ClientID：" + config.clientId);
+    emit logInfo("用户名：" + config.username);
+    emit logInfo("用户名：" + config.password);
+    // ✅ 正确设置（无任何编码问题）
+    m_client->setHostname(config.broker);
+    m_client->setPort(config.port);
+    m_client->setClientId(config.clientId);
+    m_client->setUsername(config.username);
+    m_client->setPassword(config.password);
+
+    m_client->connectToHost();
+    emit logInfo("正在连接 OneNET...");
+
+
 }
 
-void MqttModule::sendSwitch1()
+void MqttModule::onDisconnectClicked()
 {
-    if (m_client && m_client->state() == QMqttClient::Connected) {
-        m_client->publish(m_postTopic, "{\"switch1\":1}");
-        m_ui->showInfo("已发送开关1指令");
-    } else {
-        m_ui->showError("MQTT 未连接，无法发送开关指令");
-    }
+    m_client->disconnectFromHost();
+    emit logInfo("手动断开连接");
 }
 
-void MqttModule::sendSwitch2()
+void MqttModule::onSubscribeClicked()
 {
-    if (m_client && m_client->state() == QMqttClient::Connected) {
-        m_client->publish(m_postTopic, "{\"switch2\":1}");
-        m_ui->showInfo("已发送开关2指令");
-    } else {
-        m_ui->showError("MQTT 未连接，无法发送开关指令");
-    }
+    QString topic = mqttUi->m_topicEdit->text().trimmed();
+    if (topic.isEmpty()) return;
+    m_client->subscribe(QMqttTopicFilter(topic));
+    emit logInfo("已订阅主题：" + topic);
 }
 
-void MqttModule::onStateChanged(QMqttClient::ClientState s)
+void MqttModule::onPublishClicked()
 {
-    bool connected = (s == QMqttClient::Connected);
-    m_ui->updateMqttState(connected);
-    if (connected) {
-        m_ui->showInfo("MQTT 已连接");
-    } else {
-        m_ui->showInfo("MQTT 已断开");
-    }
+    QString post_topic = mqttUi->m_topicEdit->text().trimmed();
+    QByteArray payload = mqttUi->m_payloadEdit->text().toUtf8();
+    if (post_topic.isEmpty() || payload.isEmpty()) return;
+
+    m_client->publish(post_topic, payload);
+    emit logInfo("发布消息：" + post_topic + " -> " + QString::fromUtf8(payload));
 }
 
-void MqttModule::onMessageReceived(const QByteArray &message, const QMqttTopicName &topic)
+void MqttModule::onClientConnected()
 {
-    m_ui->appendReceivedMsg(topic.name(), QString::fromUtf8(message));
+    mqttUi->updateMqttState(true);
+    emit logInfo("✅ OneNET 连接成功");
+}
+
+void MqttModule::onClientDisconnected()
+{
+    mqttUi->updateMqttState(false);
+    emit logInfo("❌ 已断开连接");
+}
+
+void MqttModule::onMessageReceived(const QByteArray &payload, const QMqttTopicName &topic)
+{
+    QString topicStr = topic.name();
+    QString payloadStr = QString::fromUtf8(payload);
+    emit logInfo("📩 收到消息：" + topicStr + " -> " + payloadStr);
 
     QJsonParseError err{};
-    auto doc = QJsonDocument::fromJson(message, &err);
+    QJsonDocument doc = QJsonDocument::fromJson(payload, &err);
     if (!err.error && doc.isObject()) {
         emit sendDataToChart(doc.object());
-    } else if (err.error) {
-        m_ui->showInfo(QString("收到非JSON消息: %1").arg(QString::fromUtf8(message)));
     }
+    QJsonObject data = doc.object();
+    if (data.contains("temp") || data.contains("humi")) {
+        // 动态获取主窗口的后端客户端
+        if (parent() && parent()->parent()) {
+            auto mainWin = parent()->parent();
+            auto backend = mainWin->findChild<BackendClient*>();
+            if (backend) {
+                backend->uploadData("DHT11",
+                                    data.value("temp").toDouble(),
+                                    data.value("humi").toDouble());
+            }
+        }
+    }
+
+
+
 }

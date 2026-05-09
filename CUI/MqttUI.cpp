@@ -29,7 +29,7 @@ void MqttUI::initUI()
     QGroupBox* connectGroup = new QGroupBox("OneNET MQTT配置", this);
     QGridLayout* connectLayout = new QGridLayout(connectGroup);
     connectLayout->addWidget(new QLabel("Broker地址："), 0,0);
-    m_hostEdit = new QLineEdit("183.230.40.96");
+    m_hostEdit = new QLineEdit("mqtts.heclouds.com");
     connectLayout->addWidget(m_hostEdit,0,1);
     connectLayout->addWidget(new QLabel("端口："),0,2);
     m_portEdit = new QLineEdit("1883");
