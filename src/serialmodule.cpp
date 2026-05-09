@@ -2,8 +2,9 @@
 #include <QDateTime>
 #include <QMessageBox>
 //#include <QRegExp>
+#include <QDebug>
 
-SerialModule::SerialModule(SerialUI*ui,QWidget *parent) : QWidget(parent)
+SerialModule::SerialModule(SerialUI*ui,QObject   *parent) : QObject (parent)
         ,serialUi(ui)
         , m_serial(new QSerialPort(this))
         , m_isPortOpen(false)
@@ -19,6 +20,9 @@ SerialModule::SerialModule(SerialUI*ui,QWidget *parent) : QWidget(parent)
     connect(serialUi->m_sendBtn, &QPushButton::clicked, this, &SerialModule::onSendDataClicked);
     connect(m_serial, &QSerialPort::readyRead, this, &SerialModule::onSerialReadyRead);
     connect(m_serial, &QSerialPort::errorOccurred, this, &SerialModule::onSerialErrorOccurred);
+
+    connect(serialUi, &SerialUI::openSerialPort,   this, &SerialModule::onOpenPortClicked);
+    connect(serialUi, &SerialUI::sendSerialData,   this, &SerialModule::onSendDataClicked);
 }
 
 SerialModule::~SerialModule() = default;
@@ -39,7 +43,7 @@ void SerialModule::onOpenPortClicked()
     if (!m_isPortOpen) {
         // 打开串口
         if (serialUi->m_portCombo->currentIndex() < 0) {
-            QMessageBox::warning(this, "错误", "请选择串口！");
+            QMessageBox::warning(nullptr,"错误", "请选择串口！");
             return;
         }
         QString portName = serialUi->m_portCombo->currentText().split(" - ").first();
@@ -85,7 +89,7 @@ void SerialModule::onSendDataClicked()
     if (serialUi->m_hexSendCheck->isChecked()) {
         sendData = hexToByteArray(sendStr);
         if (sendData.isEmpty()) {
-            QMessageBox::warning(this, "错误", "十六进制格式错误！");
+            QMessageBox::warning(nullptr, "错误", "十六进制格式错误！");
             return;
         }
         emit logInfo(QString("[%1] 发送（十六进制）：%2").arg(QDateTime::currentDateTime().toString()).arg(sendStr));

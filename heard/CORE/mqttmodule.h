@@ -3,35 +3,38 @@
 
 #include <QWidget>
 #include <QMqttClient>
-class MqttUI;
+#include <QMqttMessage>
+#include <UI/MqttUI.h>
+#include <QJsonObject>
 
 class MqttModule : public QWidget
 {
 Q_OBJECT
 public:
     explicit MqttModule(MqttUI* ui, QWidget *parent = nullptr);
-    ~MqttModule();
-
+    ~MqttModule() override;
+void onClientError(QMqttClient::ClientError error);
 signals:
-    void logInfo(const QString& msg);
-    void logError(const QString& msg);
+    void logInfo(const QString& info);
+    void logError(const QString& error);
     void sendDataToChart(const QJsonObject& data);
 
 private slots:
-    void connectToMqtt();
-    void disconnectFromMqtt();
-    void subscribe(const QString& topic);
-    void publish(const QString& topic, const QByteArray& data);
-    void sendSwitch1();
-    void sendSwitch2();
-    void onStateChanged(QMqttClient::ClientState state);
-    void onMessageReceived(const QByteArray& message, const QMqttTopicName& topic);
+    void onConnectClicked();
+    void onDisconnectClicked();
+    void onSubscribeClicked();
+    void onPublishClicked();
+    void onClientConnected();
+    void onClientDisconnected();
+    void onMessageReceived(const QByteArray &payload, const QMqttTopicName &topic);
+
 
 private:
-    MqttUI* m_ui;
+    MqttUI* mqttUi;
     QMqttClient* m_client;
-    QString m_postTopic;
+    const QString post_topic = "$sys/5Tgf5AGpeZ/DHT11/thing/event/property/post";
 
+    QTextEdit* m_globalLogEdit;
 };
 
 #endif // MQTTMODULE_H

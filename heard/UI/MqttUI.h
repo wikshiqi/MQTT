@@ -33,6 +33,22 @@ public:
     void showError(const QString &err);
     void showInfo(const QString &info);  // 新增：显示普通信息
 
+
+    QLineEdit *m_hostEdit;
+    QLineEdit *m_portEdit;
+    QLineEdit *m_clientIdEdit;
+    QLineEdit *m_usernameEdit;
+    QLineEdit *m_passwordEdit;
+    QLineEdit *m_topicEdit;
+    QLineEdit *m_payloadEdit;
+    QPushButton *m_connectBtn;
+    QPushButton *m_disconnectBtn;
+    QPushButton *m_subscribeBtn;
+    QPushButton *m_publishBtn;
+    QPushButton *m_btnSwitch1;
+    QPushButton *m_btnSwitch2;
+    QTextEdit *m_logEdit;
+
 signals:
     void connectMqtt();
     void disconnectMqtt();
@@ -53,20 +69,7 @@ private:
     void initUI();
     void initStyle();
 
-    QLineEdit *m_hostEdit;
-    QLineEdit *m_portEdit;
-    QLineEdit *m_clientIdEdit;
-    QLineEdit *m_usernameEdit;
-    QLineEdit *m_passwordEdit;
-    QLineEdit *m_topicEdit;
-    QLineEdit *m_payloadEdit;
-    QPushButton *m_connectBtn;
-    QPushButton *m_disconnectBtn;
-    QPushButton *m_subscribeBtn;
-    QPushButton *m_publishBtn;
-    QPushButton *m_btnSwitch1;
-    QPushButton *m_btnSwitch2;
-    QTextEdit *m_logEdit;
+
 };
 
 #endif // MQTTUI_H

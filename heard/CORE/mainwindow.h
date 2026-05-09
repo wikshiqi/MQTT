@@ -5,7 +5,7 @@
 #include <QTabWidget>
 #include <QTextEdit>
 #include "ChartUI.h"
-
+#include "BackendClient.h"
 class MqttUI;
 class SerialUI;
 class MqttModule;
@@ -25,6 +25,7 @@ public slots:
     void onLogInfo(const QString& info);
     void onLogError(const QString& error);
 
+
 private:
     QTabWidget* m_tabWidget;
     MqttUI* m_mqttModule;
@@ -34,6 +35,7 @@ private:
     // 模块实例
     MqttModule* m_mqttModuleObj;
     SerialModule* m_serialModuleObj;
+    BackendClient *m_backend;
 };
 
 #endif // MAINWINDOW_H
