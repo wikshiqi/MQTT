@@ -13,6 +13,8 @@
 BackendClient::BackendClient(QObject *parent)
         : QObject{parent}
 {
+
+
     m_httpMgr = new QNetworkAccessManager(this);
     m_ws = new QWebSocket;
 
