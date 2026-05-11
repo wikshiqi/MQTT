@@ -3,11 +3,12 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QWebSocket>
+#include <QDebug>
 
-// ====================== 明文地址（不用SSL）======================
+// ====================== 明文 WS 地址（不用SSL！）======================
 #define BACKEND_HTTP_URL  "http://192.168.31.25:8080/iot/upload"
 #define BACKEND_WS_URL    "ws://192.168.31.25:8080/iot/ws"
-// ==============================================================
+// ====================================================================
 
 BackendClient::BackendClient(QObject *parent)
         : QObject{parent}
@@ -15,13 +16,24 @@ BackendClient::BackendClient(QObject *parent)
     m_httpMgr = new QNetworkAccessManager(this);
     m_ws = new QWebSocket;
 
-    connect(m_ws, &QWebSocket::connected, this, &BackendClient::onWsConnected);
-    connect(m_ws, &QWebSocket::disconnected, this, &BackendClient::onWsDisconnected);
-    connect(m_ws, &QWebSocket::textMessageReceived, this, &BackendClient::onWsTextReceived);
+    // 连接信号
+    connect(m_ws, &QWebSocket::connected, this, [this]() {
+        emit logInfo("✅ QT <-> SpringBoot WebSocket 连接成功！");
+    });
+    connect(m_ws, &QWebSocket::disconnected, this, [this]() {
+        emit logError("❌ WebSocket 断开");
+    });
+    connect(m_ws, &QWebSocket::textMessageReceived, this, [this](const QString& msg) {
+        emit logInfo("📩 SpringBoot 推送：" + msg);
+        emit wsMessageReceived(msg);
+    });
 
-    connectWebSocket();
+    // 连接 SpringBoot
+    m_ws->open(QUrl(BACKEND_WS_URL));
+    emit logInfo("正在连接 SpringBoot 后端...");
 }
 
+// 上传温湿度数据到 SpringBoot
 void BackendClient::uploadData(const QString &deviceId, double temp, double humi)
 {
     QJsonObject obj;
@@ -31,27 +43,15 @@ void BackendClient::uploadData(const QString &deviceId, double temp, double humi
 
     QNetworkRequest req(QUrl(BACKEND_HTTP_URL));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
     m_httpMgr->post(req, QJsonDocument(obj).toJson());
+    emit logInfo("📤 已上传温湿度到 SpringBoot");
 }
 
-void BackendClient::connectWebSocket()
+// 发送指令给 SpringBoot
+void BackendClient::sendCmd(const QString& cmd)
 {
-    emit logInfo("正在连接后端...");
-    m_ws->open(QUrl(BACKEND_WS_URL));
-}
-
-void BackendClient::onWsConnected()
-{
-    emit logInfo("✅ 连接后端成功！");
-}
-
-void BackendClient::onWsDisconnected()
-{
-    emit logError("❌ 断开连接");
-}
-
-void BackendClient::onWsTextReceived(const QString &msg)
-{
-    emit logInfo("【推送】" + msg);
-    emit wsMessageReceived(msg);
+    if (m_ws->state() == QAbstractSocket::ConnectedState) {
+        m_ws->sendTextMessage(cmd);
+    }
 }

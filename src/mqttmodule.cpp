@@ -11,19 +11,29 @@ MqttModule::MqttModule(MqttUI* ui, QWidget *parent)
 {
 
 
-    // 按钮绑定
-    connect(mqttUi->m_connectBtn,    &QPushButton::clicked,          this, &MqttModule::onConnectClicked);
-    connect(mqttUi->m_disconnectBtn, &QPushButton::clicked,          this, &MqttModule::onDisconnectClicked);
-    connect(mqttUi->m_subscribeBtn,  &QPushButton::clicked,          this, &MqttModule::onSubscribeClicked);
-    connect(mqttUi->m_publishBtn,    &QPushButton::clicked,          this, &MqttModule::onPublishClicked);
+    // 绑定UI信号
+    connect(mqttUi, &MqttUI::connectMqtt, this, &MqttModule::onConnectClicked);
+    connect(mqttUi, &MqttUI::disconnectMqtt, this, &MqttModule::onDisconnectClicked);
+    connect(mqttUi, &MqttUI::publishMessage, this, &MqttModule::onPublishClicked);
+    connect(mqttUi, &MqttUI::subscribeTopic, this, &MqttModule::onSubscribeClicked);
 
-    // MQTT 状态监听
+    // 按钮绑定
+    connect(mqttUi->m_connectBtn,    &QPushButton::clicked, this, &MqttModule::onConnectClicked);
+    connect(mqttUi->m_disconnectBtn, &QPushButton::clicked, this, &MqttModule::onDisconnectClicked);
+    connect(mqttUi->m_subscribeBtn,  &QPushButton::clicked, this, &MqttModule::onSubscribeClicked);
+    connect(mqttUi->m_publishBtn,    &QPushButton::clicked, this, &MqttModule::onPublishClicked);
+
+    // MQTT状态监听
     connect(m_client, &QMqttClient::connected,          this, &MqttModule::onClientConnected);
     connect(m_client, &QMqttClient::disconnected,       this, &MqttModule::onClientDisconnected);
     connect(m_client, &QMqttClient::messageReceived,    this, &MqttModule::onMessageReceived);
     connect(m_client, &QMqttClient::errorChanged,       this, &MqttModule::onClientError);
 
-    // 关键配置
+    // 绑定日志信号到UI
+    connect(this, &MqttModule::logInfo, mqttUi, &MqttUI::showInfo);
+    connect(this, &MqttModule::logError, mqttUi, &MqttUI::showError);
+
+    // 关键配置（OneNET明文MQTT 3.1.1）
     m_client->setProtocolVersion(QMqttClient::MQTT_3_1_1);
     m_client->setKeepAlive(60);
     m_client->setCleanSession(true);
@@ -101,6 +111,9 @@ void MqttModule::onClientConnected()
 {
     mqttUi->updateMqttState(true);
     emit logInfo("✅ OneNET 连接成功");
+    QString subTopic = "$sys/5Tgf5AGpeZ/DHT11/thing/property/set";
+    m_client->subscribe(subTopic);
+    emit logInfo("✅ 已自动订阅：" + subTopic);
 }
 
 void MqttModule::onClientDisconnected()
