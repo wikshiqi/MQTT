@@ -137,15 +137,41 @@ void MqttModule::onMessageReceived(const QByteArray &payload, const QMqttTopicNa
         emit sendDataToChart(doc.object());
     }
     QJsonObject data = doc.object();
-    if (data.contains("temp") || data.contains("humi")) {
-        // 动态获取主窗口的后端客户端
+//    if (data.contains("temp") || data.contains("humi")) {
+//        // 动态获取主窗口的后端客户端
+//        if (parent() && parent()->parent()) {
+//            auto mainWin = parent()->parent();
+//            auto backend = mainWin->findChild<BackendClient*>();
+//            if (backend) {
+//                backend->uploadData("DHT11",
+//                                    data.value("temp").toDouble(),
+//                                    data.value("humi").toDouble());
+//            }
+//        }
+//    }
+    if (data.contains("params")) {
+        QJsonObject params = data.value("params").toObject();
+
+        double temperature = params.value("temperature").toDouble();
+        double humidity    = params.value("humidity").toDouble();
+
+        emit logInfo(QString("✅ 解析成功：温度=%1，湿度=%2").arg(temperature).arg(humidity));
+
+        // 发送给图表
+        QJsonObject chartData;
+        chartData.insert("temp", temperature);
+        chartData.insert("humi", humidity);
+        emit sendDataToChart(chartData);
+
+        // 发送给 SpringBoot 后端（真正执行！）
         if (parent() && parent()->parent()) {
             auto mainWin = parent()->parent();
             auto backend = mainWin->findChild<BackendClient*>();
             if (backend) {
-                backend->uploadData("DHT11",
-                                    data.value("temp").toDouble(),
-                                    data.value("humi").toDouble());
+                backend->uploadData("DHT11", temperature, humidity);
+                emit logInfo("✅ 已推送给 SpringBoot 后端！");
+            } else {
+                emit logError("❌ 找不到 BackendClient，无法上传");
             }
         }
     }

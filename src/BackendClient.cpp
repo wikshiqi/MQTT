@@ -42,6 +42,9 @@ BackendClient::BackendClient(QObject *parent)
     emit logInfo("正在连接 SpringBoot...");
 }
 
+
+
+
 void BackendClient::uploadData(const QString &deviceId, double temp, double humi)
 {
     QJsonObject obj;
