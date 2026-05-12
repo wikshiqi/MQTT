@@ -10,7 +10,7 @@ MqttModule::MqttModule(MqttUI* ui, QWidget *parent)
         , m_client(new QMqttClient()) // 注意这里加了 this 作为父对象
 {
 
-
+    BackWebsocket=new BackendClient();
     // 绑定UI信号
     connect(mqttUi, &MqttUI::connectMqtt, this, &MqttModule::onConnectClicked);
     connect(mqttUi, &MqttUI::disconnectMqtt, this, &MqttModule::onDisconnectClicked);
@@ -137,18 +137,7 @@ void MqttModule::onMessageReceived(const QByteArray &payload, const QMqttTopicNa
         emit sendDataToChart(doc.object());
     }
     QJsonObject data = doc.object();
-//    if (data.contains("temp") || data.contains("humi")) {
-//        // 动态获取主窗口的后端客户端
-//        if (parent() && parent()->parent()) {
-//            auto mainWin = parent()->parent();
-//            auto backend = mainWin->findChild<BackendClient*>();
-//            if (backend) {
-//                backend->uploadData("DHT11",
-//                                    data.value("temp").toDouble(),
-//                                    data.value("humi").toDouble());
-//            }
-//        }
-//    }
+
     if (data.contains("params")) {
         QJsonObject params = data.value("params").toObject();
 
@@ -163,16 +152,13 @@ void MqttModule::onMessageReceived(const QByteArray &payload, const QMqttTopicNa
         chartData.insert("humi", humidity);
         emit sendDataToChart(chartData);
 
-        // 发送给 SpringBoot 后端（真正执行！）
-        if (parent() && parent()->parent()) {
-            auto mainWin = parent()->parent();
-            auto backend = mainWin->findChild<BackendClient*>();
-            if (backend) {
-                backend->uploadData("DHT11", temperature, humidity);
-                emit logInfo("✅ 已推送给 SpringBoot 后端！");
-            } else {
-                emit logError("❌ 找不到 BackendClient，无法上传");
-            }
+
+        if (BackWebsocket){
+            BackWebsocket->uploadData("DHT11", temperature, humidity);
+            emit logInfo("✅ 已推送给 SpringBoot 后端！");
+        }
+        else {
+            emit logInfo("✅ 推送后端失败");
         }
     }
 

@@ -6,6 +6,9 @@
 #include <QMqttMessage>
 #include <UI/MqttUI.h>
 #include <QJsonObject>
+#include <QWebSocket>  // 必须加！
+#include "BackendClient.h"
+class BackendClient;
 
 class MqttModule : public QWidget
 {
@@ -32,8 +35,8 @@ private slots:
 private:
     MqttUI* mqttUi;
     QMqttClient* m_client;
-    const QString post_topic = "$sys/5Tgf5AGpeZ/DHT11/thing/event/property/post";
-
+    QString post_topic = "$sys/5Tgf5AGpeZ/DHT11/thing/event/property/post";
+    BackendClient *BackWebsocket;
     QTextEdit* m_globalLogEdit;
 };
 

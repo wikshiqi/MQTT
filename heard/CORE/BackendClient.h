@@ -5,6 +5,7 @@
 #include <QNetworkAccessManager>
 #include <QWebSocket>
 #include <QTimer>
+#include "mqttmodule.h"
 
 class BackendClient : public QObject
 {
@@ -22,6 +23,7 @@ private:
     QNetworkAccessManager *m_httpMgr;
     QWebSocket *m_ws;
     QTimer *m_reconnectTimer; // 这里加上！
+    //MqttModule *mqtt_msg;
 };
 
 #endif // BACKENDCLIENT_H
