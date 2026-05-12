@@ -114,6 +114,9 @@ void MqttModule::onClientConnected()
     QString subTopic = "$sys/5Tgf5AGpeZ/DHT11/thing/property/set";
     m_client->subscribe(subTopic);
     emit logInfo("✅ 已自动订阅：" + subTopic);
+    subTopic="$sys/5Tgf5AGpeZ/DHT11/thing/property/post/reply";
+    m_client->subscribe(subTopic);
+    emit logInfo("✅ 已自动订阅：" + subTopic);
 }
 
 void MqttModule::onClientDisconnected()
