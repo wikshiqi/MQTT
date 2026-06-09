@@ -99,7 +99,6 @@ void MqttModule::onSubscribeClicked()
 
 void MqttModule::onPublishClicked()
 {
-    QString post_topic = mqttUi->m_topicEdit->text().trimmed();
     QByteArray payload = mqttUi->m_payloadEdit->text().toUtf8();
     if (post_topic.isEmpty() || payload.isEmpty()) return;
 
@@ -161,7 +160,6 @@ void MqttModule::onMessageReceived(const QByteArray &payload, const QMqttTopicNa
             emit logInfo("✅ 推送后端失败");
         }
     }
-
 
 
 }

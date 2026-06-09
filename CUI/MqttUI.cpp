@@ -61,7 +61,7 @@ void MqttUI::initUI()
     QGridLayout* pubSubLayout = new QGridLayout(pubSubGroup);
     pubSubLayout->addWidget(new QLabel("主题："),0,0);
     m_topicEdit = new QLineEdit;
-    m_topicEdit->setText("$/sys/5Tgf5AGpeZ/DHT11/thing/event/property/post");
+    //m_topicEdit->setText("$/sys/5Tgf5AGpeZ/DHT11/thing/event/property/post");
     pubSubLayout->addWidget(m_topicEdit,0,1);
     m_subscribeBtn = new QPushButton("订阅");
     pubSubLayout->addWidget(m_subscribeBtn,0,2);
@@ -69,7 +69,7 @@ void MqttUI::initUI()
     pubSubLayout->addWidget(new QLabel("消息："),1,0);
     m_payloadEdit = new QLineEdit("{\"temp\":25.5}");
     pubSubLayout->addWidget(m_payloadEdit,1,1);
-    m_publishBtn = new QPushButton("发布");
+    m_publishBtn = new QPushButton("上传");
     pubSubLayout->addWidget(m_publishBtn,1,2);
     mainLayout->addWidget(pubSubGroup);
 

@@ -35,7 +35,7 @@ private slots:
 private:
     MqttUI* mqttUi;
     QMqttClient* m_client;
-    QString post_topic = "$sys/5Tgf5AGpeZ/DHT11/thing/event/property/post";
+    QString post_topic = "$sys/5Tgf5AGpeZ/DHT11/thing/propert";//"$sys/5Tgf5AGpeZ/DHT11/thing/event/property/post";
     BackendClient *BackWebsocket;
     QTextEdit* m_globalLogEdit;
 };
